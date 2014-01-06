@@ -16,9 +16,11 @@ app = Flask(__name__)
 app.secret_key = r"A0Zr98j/3yX R~XHH!jmN'LWX/,?RT"
 app.session_interface = ItsdangerousSessionInterface()
 
+
 @app.teardown_appcontext
 def shutdown_session(exception=None):
     db.session.close()
+
 
 @app.errorhandler(InvalidParam)
 @app.errorhandler(NoAccess)
@@ -27,9 +29,11 @@ def handle_error(error):
     response.status_code = error.status_code
     return response
 
+
 @app.errorhandler(404)
 def not_found(error=None):
-    return make_response(jsonify({ 'status': 'error', 'message': 'Not found' }), 404)
+    return make_response(jsonify({'status': 'error', 'message': 'Not found'}), 404)
+
 
 def require_auth(f):
     @wraps(f)
@@ -38,6 +42,7 @@ def require_auth(f):
         if not user_id:
             raise NoAccess('not login')
         return f(*args, **kvargs)
+
     return decorated
 
 #======================================================================
@@ -48,6 +53,7 @@ def index():
     resp = make_response(file('README.md').read(), 200)
     resp.headers['Content-Type'] = 'text/plain; charset=utf-8'
     return resp
+
 
 @app.route('/auth/login', methods=['POST'])
 @crossdomain(origin='*')
@@ -72,9 +78,9 @@ def authlogin():
             token_info = get_token_info(access_token)
         uid = token_info['uid']
         appkey = token_info['appkey']
-        account = db.session.query(Account)\
-                  .filter(Account.uid==uid)\
-                  .filter(Account.provider=='weibo').first()
+        account = db.session.query(Account) \
+            .filter(Account.uid == uid) \
+            .filter(Account.provider == 'weibo').first()
         if os.environ.get('DEBUG', None):
             user_info = get_user_info(access_token, uid, appkey)
         else:
@@ -109,11 +115,13 @@ def authlogin():
     except Exception as e:
         raise InvalidParam(e.message)
 
+
 def getmovies(movie_type, offset, limit):
     """
     Return movie list
     """
-    rows = db.session.query(Movie.param).filter(Movie.type==movie_type).filter(Movie.is_latest==1).limit(limit).offset(offset)
+    rows = db.session.query(Movie.param).filter(Movie.type == movie_type).filter(Movie.is_latest == 1).limit(
+        limit).offset(offset)
     items = [json.loads(r.param) for r in rows]
 
     return jsonify({
@@ -122,6 +130,7 @@ def getmovies(movie_type, offset, limit):
             "items": items
         }
     })
+
 
 @app.route('/api/movies/<movie_type>')
 @crossdomain(origin='*')
@@ -137,24 +146,27 @@ def moviescoming(movie_type):
     else:
         return getmovies(MOVIE_TYPE_COMING, offset, limit)
 
+
 def post_message(src_user_id, dst_user_id, content):
     message = Message(src_user_id=src_user_id, dst_user_id=dst_user_id, content=content)
     db.session.add(message)
     db.session.commit()
 
+
 def get_messages(uid1, uid2, lastid):
-    rows = db.session\
-            .query(Message.id, Message.content, Message.created_at, Account.uid)\
-            .join(Account, Account.user_id == Message.src_user_id)\
-            .filter(Message.id > lastid)\
-            .filter(Account.provider == 'weibo')\
-            .filter(Message.src_user_id.in_([uid1, uid2]))\
-            .filter(Message.dst_user_id.in_([uid1, uid2]))\
-            .order_by(Message.id.desc()).all()
+    rows = db.session \
+        .query(Message.id, Message.content, Message.created_at, Account.uid) \
+        .join(Account, Account.user_id == Message.src_user_id) \
+        .filter(Message.id > lastid) \
+        .filter(Account.provider == 'weibo') \
+        .filter(Message.src_user_id.in_([uid1, uid2])) \
+        .filter(Message.dst_user_id.in_([uid1, uid2])) \
+        .order_by(Message.id.desc()).all()
     items = [dict(zip(['id', 'content', 'created_at', 'uid'], [id, content, totimestamp(created_at), uid]))
-            for id, content, created_at, uid in rows]
+             for id, content, created_at, uid in rows]
     items.reverse()
     return items
+
 
 @app.route('/api/messages', methods=['GET', 'POST'])
 @crossdomain(origin='*')
@@ -168,7 +180,7 @@ def apimessages():
         src_user_id = session.get('user_id')
     if not src_user_id:
         raise InvalidParam('no src_user_id')
-    # dev end
+        # dev end
     if request.method == 'POST':
         try:
             user_id = int(request.form.get('user_id'))
@@ -208,6 +220,7 @@ def apimessages():
             }
         })
 
+
 @app.route('/api/friends', methods=['GET'])
 @crossdomain(origin='*')
 @require_auth
@@ -218,7 +231,7 @@ def apifriends():
         src_user_id = session.get('user_id')
     if not src_user_id:
         raise InvalidParam('no src_user_id')
-    # dev end
+        # dev end
 
     try:
         lastid = int(request.args.get('lastid', 0))
@@ -228,19 +241,21 @@ def apifriends():
     from_table = aliased(Greeting)
     to_table = aliased(Greeting)
 
-    friends = db.session.query(Greeting.id, Greeting.dst_user_id, Account.uid, Account.provider, Greeting.created_at)\
-                        .join(Account, Account.user_id == Greeting.dst_user_id)\
-                        .filter(Greeting.src_user_id == src_user_id)\
-                        .filter(Greeting.is_friend == True)\
-                        .filter(Greeting.id > lastid).all()
+    friends = db.session.query(Greeting.id, Greeting.dst_user_id, Account.uid, Account.provider, Greeting.created_at) \
+        .join(Account, Account.user_id == Greeting.dst_user_id) \
+        .filter(Greeting.src_user_id == src_user_id) \
+        .filter(Greeting.is_friend == True) \
+        .filter(Greeting.id > lastid).all()
 
     return jsonify({
         "status": "success",
         "data": {
-            "items": [dict(zip(['id', 'user_id', 'uid', 'provider', 'created_at'], [id, user_id, uid, provider, totimestamp(created_at)]))
-                for id, user_id, uid, provider, created_at in friends]
+            "items": [dict(zip(['id', 'user_id', 'uid', 'provider', 'created_at'],
+                               [id, user_id, uid, provider, totimestamp(created_at)]))
+                      for id, user_id, uid, provider, created_at in friends]
         }
     })
+
 
 def post_greeting(request, db, src_user_id):
     provider = request.form.get('provider')
@@ -249,9 +264,9 @@ def post_greeting(request, db, src_user_id):
     if not provider or not uid:
         raise InvalidParam('provider or uid is not invalid')
 
-    account = db.session.query(Account)\
-              .filter(Account.uid==uid)\
-              .filter(Account.provider==provider).first()
+    account = db.session.query(Account) \
+        .filter(Account.uid == uid) \
+        .filter(Account.provider == provider).first()
 
     # if the user you are greeting to is not registered in our app then we create
     # a mock user account for him
@@ -262,18 +277,18 @@ def post_greeting(request, db, src_user_id):
         db.session.commit()
         account = user.accounts[0]
 
-    greeting = db.session.query(Greeting)\
-               .filter(Greeting.src_user_id==src_user_id)\
-               .filter(Greeting.dst_user_id==account.user_id).first()
+    greeting = db.session.query(Greeting) \
+        .filter(Greeting.src_user_id == src_user_id) \
+        .filter(Greeting.dst_user_id == account.user_id).first()
 
     if not greeting:
         greeting = Greeting(src_user_id=src_user_id, dst_user_id=account.user_id)
         db.session.add(greeting)
         db.session.commit()
 
-    back_greeting = db.session.query(Greeting)\
-                    .filter(Greeting.src_user_id==account.user_id)\
-                    .filter(Greeting.dst_user_id==src_user_id).first()
+    back_greeting = db.session.query(Greeting) \
+        .filter(Greeting.src_user_id == account.user_id) \
+        .filter(Greeting.dst_user_id == src_user_id).first()
 
     if back_greeting:
         back_greeting.is_friend = True
@@ -300,6 +315,7 @@ def post_greeting(request, db, src_user_id):
             }
         })
 
+
 def get_greeting(request, db, src_user_id):
     try:
         lastid = int(request.args.get('lastid', 0))
@@ -307,12 +323,12 @@ def get_greeting(request, db, src_user_id):
         raise InvalidParam('invalid lastid')
 
     rows = db.session.query(
-            Account.uid, Greeting.id, Greeting.created_at, Account.user_id, Greeting.is_friend)\
-            .join(Greeting, Greeting.dst_user_id==Account.user_id)\
-            .filter(Greeting.src_user_id==src_user_id)\
-            .filter(Greeting.id > lastid)\
-            .order_by(Greeting.is_friend.desc(), Greeting.created_at.desc(), Greeting.is_friend_at.desc())\
-            .all()
+        Account.uid, Greeting.id, Greeting.created_at, Account.user_id, Greeting.is_friend) \
+        .join(Greeting, Greeting.dst_user_id == Account.user_id) \
+        .filter(Greeting.src_user_id == src_user_id) \
+        .filter(Greeting.id > lastid) \
+        .order_by(Greeting.is_friend.desc(), Greeting.created_at.desc(), Greeting.is_friend_at.desc()) \
+        .all()
 
     return jsonify({
         'status': 'success',
@@ -320,7 +336,7 @@ def get_greeting(request, db, src_user_id):
             'items': [dict(zip(
                 ['uid', 'id', 'created_at', 'user_id', 'is_friend'],
                 [uid, id, totimestamp(created_at), user_id, is_friend]))
-                for uid, id, created_at, user_id, is_friend in rows]
+                      for uid, id, created_at, user_id, is_friend in rows]
         }
     })
 
@@ -337,7 +353,7 @@ def apigreetings():
         src_user_id = session.get('user_id')
     if not src_user_id:
         raise InvalidParam('no src_user_id')
-    # dev end
+        # dev end
     if request.method == 'POST': # create greeting
         return post_greeting(request, db, src_user_id)
     else:
@@ -346,6 +362,7 @@ def apigreetings():
 
 if os.environ.get('SERVER_SOFTWARE', None):
     from bae.core.wsgi import WSGIApplication
+
     application = WSGIApplication(app)
 else:
     app.run(host='0.0.0.0', debug=True)

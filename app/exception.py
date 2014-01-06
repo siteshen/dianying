@@ -15,6 +15,7 @@ class InvalidParam(Exception):
         rv['status'] = self.status
         return rv
 
+
 class NoAccess(Exception):
     status_code = 403
 

@@ -20,6 +20,7 @@ migrate = Migrate(app, db)
 manager = Manager(app)
 manager.add_command('db', MigrateCommand)
 
+
 class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
@@ -30,6 +31,7 @@ class User(db.Model):
     accounts = db.relationship('Account', backref='user', lazy='dynamic')
     is_registered = db.Column(db.Boolean, default=False)
 
+
 class Message(db.Model):
     __tablename__ = 'messages'
     id = db.Column(db.Integer, primary_key=True)
@@ -37,6 +39,7 @@ class Message(db.Model):
     dst_user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     content = db.Column(db.String(255))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 
 class Movie(db.Model):
     __tablename__ = 'movies'
@@ -46,6 +49,7 @@ class Movie(db.Model):
     type = db.Column(TINYINT)
     param = db.Column(db.Text)
     is_latest = db.Column(TINYINT)
+
 
 class Account(db.Model):
     __tablename__ = 'accounts'
@@ -57,6 +61,7 @@ class Account(db.Model):
     expires_at = db.Column(db.DateTime, default=datetime.utcnow)
     access_token = db.Column(db.String(255))
 
+
 class Greeting(db.Model):
     __tablename__ = 'greetings'
     id = db.Column(db.Integer, primary_key=True)
@@ -65,6 +70,7 @@ class Greeting(db.Model):
     is_friend = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_friend_at = db.Column(db.DateTime, default=None)
+
 
 if __name__ == '__main__':
     manager.run()

@@ -4,10 +4,10 @@ from itsdangerous import URLSafeTimedSerializer, BadSignature
 
 
 class ItsdangerousSession(CallbackDict, SessionMixin):
-
     def __init__(self, initial=None):
         def on_update(self):
             self.modified = True
+
         CallbackDict.__init__(self, initial, on_update)
         self.modified = False
 
@@ -41,7 +41,7 @@ class ItsdangerousSessionInterface(SessionInterface):
         if not session:
             if session.modified:
                 response.delete_cookie(app.session_cookie_name,
-                                   domain=domain)
+                                       domain=domain)
             return
         expires = self.get_expiration_time(app, session)
         val = self.get_serializer(app).dumps(dict(session))
