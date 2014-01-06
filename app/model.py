@@ -1,10 +1,13 @@
+from datetime import datetime
+
 from flask import Flask
+from sqlalchemy.dialects.mysql import TINYINT
+
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.script import Manager
 from flask.ext.migrate import Migrate, MigrateCommand
-from sqlalchemy.dialects.mysql import TINYINT
-from constants import *
-from datetime import datetime
+from app.constants import *
+
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = DB_STRING

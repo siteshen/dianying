@@ -1,17 +1,16 @@
 #-*- coding:utf-8 -*-
-import os
-from flask import Flask, g, request, jsonify, session, url_for, redirect, abort, make_response
-from sqlalchemy.orm import joinedload, aliased
-from flask_oauthlib.client import OAuth
-from cors import crossdomain
-from constants import *
-import json
-from helper import *
-from exception import *
-from model import User, Message, Movie, db, Account, Greeting
 from functools import wraps
-from datetime import datetime
+
+from flask import Flask, request, jsonify, session, make_response
+from sqlalchemy.orm import aliased
+
+from cors import crossdomain
+from app.constants import *
+from app.helper import *
+from app.exception import *
+from app.model import User, Message, Movie, db, Account, Greeting
 from better_session import ItsdangerousSessionInterface
+
 
 app = Flask(__name__)
 app.secret_key = r"A0Zr98j/3yX R~XHH!jmN'LWX/,?RT"

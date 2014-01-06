@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
 
-import urllib2
-from bs4 import BeautifulSoup
 import cookielib
 from threading import Thread
-import json
-from helper import *
-from constants import *
 from gzip import GzipFile
 from StringIO import StringIO
 import re
+
+from bs4 import BeautifulSoup
+
+from app.helper import *
+from app.constants import *
+
 
 HOST_URL = 'http://m.douban.com'
 DOUBAN_API_URL = 'http://api.douban.com/v2/movie/subject/'
@@ -142,7 +143,7 @@ def run(db):
   db.commit()
 
 if __name__ == "__main__":
-  from db import MySQL as DB
+  from app.db import MySQL as DB
   db = DB(dbconfig[ENV])
   run(db)
 

@@ -1,6 +1,6 @@
-import MySQLdb
-
 import logging
+
+import MySQLdb
 logging.basicConfig(level=logging.INFO)
 
 class DB:
@@ -50,5 +50,5 @@ class MySQL(DB):
 
 
 if __name__ == '__main__':
-  from constants import *
+  from app.constants import *
   db = MySQL(dbconfig['development'])
