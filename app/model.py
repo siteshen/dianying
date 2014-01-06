@@ -6,7 +6,7 @@ from sqlalchemy.dialects.mysql import TINYINT
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask.ext.script import Manager
 from flask.ext.migrate import Migrate, MigrateCommand
-from app.constants import *
+from .constants import *
 
 
 app = Flask(__name__)

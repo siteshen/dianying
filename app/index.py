@@ -4,12 +4,12 @@ from functools import wraps
 from flask import Flask, request, jsonify, session, make_response
 from sqlalchemy.orm import aliased
 
-from cors import crossdomain
-from app.constants import *
-from app.helper import *
-from app.exception import *
-from app.model import User, Message, Movie, db, Account, Greeting
-from better_session import ItsdangerousSessionInterface
+from .cors import crossdomain
+from .constants import *
+from .helper import *
+from .exception import *
+from .model import User, Message, Movie, db, Account, Greeting
+from .better_session import ItsdangerousSessionInterface
 
 
 app = Flask(__name__)
@@ -358,11 +358,3 @@ def apigreetings():
         return post_greeting(request, db, src_user_id)
     else:
         return get_greeting(request, db, src_user_id)
-
-
-if os.environ.get('SERVER_SOFTWARE', None):
-    from bae.core.wsgi import WSGIApplication
-
-    application = WSGIApplication(app)
-else:
-    app.run(host='0.0.0.0', debug=True)
