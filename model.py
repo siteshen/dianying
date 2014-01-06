@@ -34,6 +34,7 @@ class Message(db.Model):
     dst_user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     content = db.Column(db.String(255))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    read_at = db.Column(db.DateTime, default=None)
 
 class Movie(db.Model):
     __tablename__ = 'movies'
@@ -62,6 +63,14 @@ class Greeting(db.Model):
     is_friend = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_friend_at = db.Column(db.DateTime, default=None)
+
+class LastRead(db.Model):
+    __tablename__ = 'last_read'
+    id = db.Column(db.Integer, primary_key=True)
+    owner_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    lastid = db.Column(db.Integer)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 if __name__ == '__main__':
     manager.run()
