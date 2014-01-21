@@ -43,6 +43,17 @@ def require_auth(f):
 
 #======================================================================
 
+# for debug
+def set_src_user_id():
+    src_user_id = request.args.get('src_user_id')
+    if not src_user_id:
+        src_user_id = request.form.get('src_user_id')
+    if not src_user_id:
+        src_user_id = session.get('user_id')
+    if not src_user_id:
+        raise InvalidParam('no src_user_id')
+    return src_user_id
+
 @app.route('/')
 @crossdomain(origin='*')
 def index():
@@ -162,13 +173,7 @@ def get_messages(uid1, uid2, lastid):
 @require_auth
 def apimessages():
     # this is for dev
-    src_user_id = request.args.get('src_user_id')
-    if not src_user_id:
-        src_user_id = request.form.get('src_user_id')
-    if not src_user_id:
-        src_user_id = session.get('user_id')
-    if not src_user_id:
-        raise InvalidParam('no src_user_id')
+    src_user_id = set_src_user_id()
     # dev end
     if request.method == 'POST':
         try:
@@ -196,7 +201,6 @@ def apimessages():
             raise InvalidParam('invalid lastid')
 
         try:
-            print request.args
             user_id = int(request.args.get('user_id'))
         except:
             raise InvalidParam('user_id is invalid')
@@ -214,11 +218,7 @@ def apimessages():
 @require_auth
 def apifriends():
     # this is for dev
-    src_user_id = request.args.get('src_user_id')
-    if not src_user_id:
-        src_user_id = session.get('user_id')
-    if not src_user_id:
-        raise InvalidParam('no src_user_id')
+    src_user_id = set_src_user_id()
     # dev end
 
     try:
@@ -331,14 +331,9 @@ def get_greeting(request, db, src_user_id):
 @require_auth
 def apigreetings():
     # this is for dev
-    src_user_id = request.args.get('src_user_id')
-    if not src_user_id:
-        src_user_id = request.form.get('src_user_id')
-    if not src_user_id:
-        src_user_id = session.get('user_id')
-    if not src_user_id:
-        raise InvalidParam('no src_user_id')
+    src_user_id = set_src_user_id()
     # dev end
+
     if request.method == 'POST': # create greeting
         return post_greeting(request, db, src_user_id)
     else:
@@ -349,24 +344,18 @@ def apigreetings():
 @require_auth
 def apiunread():
     # this is for dev
-    src_user_id = request.args.get('src_user_id')
-    if not src_user_id:
-        src_user_id = request.form.get('src_user_id')
-    if not src_user_id:
-        src_user_id = session.get('user_id')
-    if not src_user_id:
-        raise InvalidParam('no src_user_id')
+    src_user_id = set_src_user_id()
     # dev end
 
     rows = db.session\
-            .query(Message.id, Message.content, Message.created_at, Account.uid)\
+            .query(Message.id, Message.content, Message.created_at, Account.uid, Message.src_user_id)\
             .join(Account, Account.user_id == Message.src_user_id)\
             .filter(Account.provider == 'weibo')\
             .filter(Message.read_at == None)\
             .filter(Message.dst_user_id == src_user_id)\
             .order_by(Message.id.desc()).all()
-    items = [dict(zip(['id', 'content', 'created_at', 'uid'], [id, content, totimestamp(created_at), uid]))
-            for id, content, created_at, uid in rows]
+    items = [dict(zip(['id', 'content', 'created_at', 'uid', 'user_id'], [id, content, totimestamp(created_at), uid, src_user_id]))
+            for id, content, created_at, uid, src_user_id in rows]
     items.reverse()
     return jsonify({
         "status": "success",
@@ -376,28 +365,29 @@ def apiunread():
     })
 
 def getlastid(owner_id):
-    """docstring for getlastid"""
-    rows = db.session.query(LastRead.user_id, LastRead.lastid)\
-            .filter(LastRead.owner_id == owner_id)
-    items = [dict(zip(['user_id', 'lastid'], [user_id, lastid]))
-            for user_id, lastid in rows]
+    row = db.session.query(LastRead.lastid)\
+            .filter(LastRead.owner_id == owner_id).first()
+    if not row:
+        lastid = 0
+    else:
+        lastid = row[0]
     return jsonify({
         'status': 'success',
-        'data': items
+        'data': lastid
     })
 
-def postlastid(user_id, owner_id, lastid):
+def postlastid(owner_id, lastid):
     item = db.session.query(LastRead)\
             .filter(LastRead.owner_id == owner_id)\
-            .filter(LastRead.user_id == user_id).first()
+            .first()
 
     if not item:
-        item = LastRead(owner_id=owner_id, user_id=user_id, lastid=lastid)
+        item = LastRead(owner_id=owner_id, lastid=lastid)
     else:
         item.lastid = lastid
 
     db.session.add(item)
-    Message.query.filter_by(dst_user_id=owner_id, src_user_id=user_id, read_at=None)\
+    Message.query.filter_by(dst_user_id=owner_id, read_at=None)\
             .filter(Message.id <= lastid)\
             .update({'read_at': sqlnow()})
     db.session.commit()
@@ -405,10 +395,7 @@ def postlastid(user_id, owner_id, lastid):
 
     return jsonify({
         'status': 'success',
-        'data': {
-            'user_id': user_id,
-            'lastid': lastid
-        }
+        'data': lastid
     })
 
 
@@ -417,23 +404,16 @@ def postlastid(user_id, owner_id, lastid):
 @require_auth
 def apilast_read():
     # this is for dev
-    src_user_id = request.args.get('src_user_id')
-    if not src_user_id:
-        src_user_id = request.form.get('src_user_id')
-    if not src_user_id:
-        src_user_id = session.get('user_id')
-    if not src_user_id:
-        raise InvalidParam('no src_user_id')
+    src_user_id = set_src_user_id()
     # dev end
 
     if request.method == 'POST':
         try:
             lastid = int(request.form.get('lastid'))
-            user_id = int(request.form.get('user_id'))
         except:
-            raise InvalidParam('invalid user_id or lastid')
+            raise InvalidParam('invalid lastid')
 
-        return postlastid(user_id, src_user_id, lastid)
+        return postlastid(src_user_id, lastid)
     else:
         return getlastid(src_user_id)
 

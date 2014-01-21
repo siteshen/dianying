@@ -195,18 +195,21 @@ no parameter
     "items": [
       {
         "uid": "123",
+        "user_id": 3,
         "content": "test",
         "created_at": 1387348724306
         "id": 7
       },
       {
         "uid": "123",
+        "user_id": 3,
         "content": "test",
         "created_at": 1387348724306
         "id": 8
       },
       {
         "uid": "471231231",
+        "user_id": 3,
         "content": "test",
         "created_at": 1387348724306
         "id": 9
@@ -288,41 +291,24 @@ no parameter
 
 ```
 {
-  "data" {
-    "items": [
-      {
-        "uid": "1",
-        "user_id": "3",
-        "lastid": 10
-      },
-      {
-        "uid": "2",
-        "user_id": "4",
-        "lastid": 18
-      }
-    ]
-  },
+  "data" 19,
   "status": "success"
 }
 ```
 
 ## POST /api/last_read
 
-设置用户最后查看的用户消息的最大 id
+设置用户最后查看的消息的最大 `id`，下次请求 `unread_messages` 请求的时候将获取大于 `lastid` 的数据。
 
 ### parameters:
 
-* user_id: int
 * lastid: int
 
 ### returns:
 
 ```
 {
-  "data": {
-    "user_id": "1",
-    "lastid": "10"
-  },
+  "data": 19,
   "status": "success"
 }
 ```
